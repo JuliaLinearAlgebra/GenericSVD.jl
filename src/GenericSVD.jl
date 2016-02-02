@@ -53,8 +53,9 @@ offdiag_approx_zero(B::Bidiagonal,i,ɛ) =
 
 
 """
-This finds the lowest strictly-bidiagonal submatrix, i.e. n₁, n₂ such that
+Generic SVD algorithm:
 
+This finds the lowest strictly-bidiagonal submatrix, i.e. n₁, n₂ such that
 ```
      [ d ?           ]
      [   d 0         ]
@@ -63,6 +64,7 @@ This finds the lowest strictly-bidiagonal submatrix, i.e. n₁, n₂ such that
   n₂ [         d 0   ]
      [           d 0 ]
 ```
+Then applies a Golub-Kahan iteration.
 """
 function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ::T = eps(T))
     n = size(B, 1)
@@ -81,17 +83,7 @@ function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ::T = eps(T))
                 n₁ -= 1
             end
 
-
-
             # TODO: check for diagonal zeros
-            # if n₂ == n₁ + 1 # 2x2 block
-                
-            #     B.dv[n₁] = s₂
-            #     B.dv[n₂] = s₁
-            #     B.eb[n₁] = 0
-                
-            #     # TODO: apply op
-            # end
 
             d₁ = B.dv[n₂-1]
             d₂ = B.dv[n₂]
