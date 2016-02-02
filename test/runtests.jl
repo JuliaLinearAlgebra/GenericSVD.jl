@@ -22,7 +22,7 @@ bS = svdfact(bX)
 
 
 bY = big(randn(n))
-@test qrfact(bX,Val{false}) \ bY ≈ bS \ bY
+@test isapprox(qrfact(bX,Val{false}) \ bY, bS \ bY, rtol=1e3*eps(BigFloat))
 
 X = randn(n,m)+im*randn(n,m)
 bX = big(X)

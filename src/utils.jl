@@ -27,7 +27,6 @@ A_mul_B!(G::LinAlg.Givens, ::Void) = nothing
 A_mul_Bc!(::Void, G::LinAlg.Givens) = nothing
 
 function A_ldiv_B!{Ta,Tb}(A::SVD{Ta}, B::StridedVecOrMat{Tb})
-    T = promote_type(Ta,Tb)
-    k = length(find(A.S .> eps(real(T))*maximum(A.S)))
+    k = searchsortedlast(A.S, eps(real(Ta))*A.S[1], rev=true)
     A.Vt[1:k,:]' * (A.S[1:k] .\ (A.U[:,1:k]' * B))
 end
