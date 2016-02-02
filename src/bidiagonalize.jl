@@ -40,7 +40,7 @@ end
 function bidiagonalize_tall!{T}(A::Matrix{T})
     m,n = size(A)
     R = real(T)
-    B = Bidiagonal(Array(R,n),Array(R,n-1),true)
+    B = Bidiagonal{R}(Array(R,n),Array(R,n-1),true)
     bidiagonalize_tall!(A,B)
 end
 
