@@ -28,5 +28,5 @@ A_mul_Bc!(::Void, G::LinAlg.Givens) = nothing
 
 function A_ldiv_B!{Ta,Tb}(A::SVD{Ta}, B::StridedVecOrMat{Tb})
     k = searchsortedlast(A.S, eps(real(Ta))*A.S[1], rev=true)
-    A.Vt[1:k,:]' * (A.S[1:k] .\ (A.U[:,1:k]' * B))
+    sub(A.Vt,1:k,:)' * (sub(A.S,1:k) .\ (sub(A.U,:,1:k)' * B))
 end
