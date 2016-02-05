@@ -59,3 +59,18 @@ bSt = svdfact(bXt)
 @test isapprox(full(bSt), bXt, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bXt), svdvals(X), rtol=1e3*eps())
 @test bXt == X' # check we didn't modify the input
+
+
+X = Complex128[1 2 0; 0 1 2; 0 0 0]
+bX = big(X)
+bS = svdfact(bX)
+@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+@test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
+@test bX == X # check we didn't modify the input
+
+X = Complex128[0 2 0; 0 1 2; 0 0 1]
+bX = big(X)
+bS = svdfact(bX)
+@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+@test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
+@test bX == X # check we didn't modify the input

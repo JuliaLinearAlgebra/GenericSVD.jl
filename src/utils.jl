@@ -39,7 +39,7 @@ function givens{T}(f::T, g::T, i1::Integer, i2::Integer)
     end
     c, s, r = Base.LinAlg.givensAlgorithm(f, g)
     if i1 > i2
-        s = -s
+        s = -conj(s)
         i1,i2 = i2,i1
     end
     Base.LinAlg.Givens(i1, i2, convert(T, c), convert(T, s)), r
