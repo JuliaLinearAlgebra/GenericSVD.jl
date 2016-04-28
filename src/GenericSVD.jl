@@ -1,11 +1,14 @@
 module GenericSVD
 
-import Base: SVD, svdvals!, svdfact!
+import Base: SVD
 
 include("utils.jl")
 include("bidiagonalize.jl")
 
-function svdfact!(X; sorted=true, thin=true)
+Base.svdfact!(X::AbstractMatrix; thin=true) = generic_svdfact!(X; thin=thin)
+Base.svdvals!(X::AbstractMatrix) = generic_svdvals!(X)
+
+function generic_svdfact!(X::AbstractMatrix; sorted=true, thin=true)
     m,n = size(X)
     t =false
     if m < n
@@ -33,7 +36,7 @@ function svdfact!(X; sorted=true, thin=true)
     t ? SVD(Vt',S,U') : SVD(U,S,Vt)
 end
 
-function svdvals!(X; sorted=true)
+function generic_svdvals!(X::AbstractMatrix; sorted=true)
     m,n = size(X)
     if m < n
         X = X'
