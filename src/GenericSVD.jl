@@ -1,5 +1,7 @@
+__precompile__(true)
 module GenericSVD
 
+import Compat: view
 import Base: SVD
 
 include("utils.jl")
@@ -53,12 +55,15 @@ end
 
 
 """
-Tests if the B[i-1,i] element is approximately zero, using the criteria
+    is_offdiag_approx_zero!(B::Bidiagonal,i,ɛ)
+
+Tests if the element `B[i-1,i]` is approximately zero, using the criteria
 ```math
     |B_{i-1,i}| ≤ ɛ*(|B_{i-1,i-1}| + |B_{i,i}|)
 ```
+If true, sets the element to exact zero.
 """
-function offdiag_approx_zero(B::Bidiagonal,i,ɛ)
+function is_offdiag_approx_zero!(B::Bidiagonal,i,ɛ)
     iszero = abs(B.ev[i-1]) ≤ ɛ*(abs(B.dv[i-1]) + abs(B.dv[i]))
     if iszero
         B.ev[i-1] = 0
@@ -68,9 +73,19 @@ end
 
 
 """
-Generic SVD algorithm:
+    svd!(B::Bidiagonal [, U, Vt [, ϵ]])
 
-This finds the lowest strictly-bidiagonal submatrix, i.e. n₁, n₂ such that
+Compute the SVD of a bidiagonal matrix `B`, via an implicit QR algorithm with shift (known as a Golub-Kahan iterations).
+
+Optional arguments:
+
+ * `U` and `Vt`: orthogonal matrices which pre- and post-multiply `B`, for computing the SVD of a full matrix `X = U*B*Vt` from its bidiagonalized form.
+
+ * `ϵ`: the tolerance for testing zeros of the offdiagonal elements of `B` (see below).
+
+Algorithm:
+
+This proceeds by iteratively finding the lowest strictly-bidiagonal submatrix, i.e. n₁, n₂ such that
 ```
      [ d ?           ]
      [   d 0         ]
@@ -79,7 +94,7 @@ This finds the lowest strictly-bidiagonal submatrix, i.e. n₁, n₂ such that
   n₂ [         d 0   ]
      [           d 0 ]
 ```
-Then applies a Golub-Kahan iteration.
+then applying a Golub-Kahan QR iteration.
 """
 function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ::T = eps(T))
     n = size(B, 1)
@@ -91,27 +106,24 @@ function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ::T = eps(T))
         while true
             @label mainloop
 
-            while offdiag_approx_zero(B,n₂,ɛ)
+            while is_offdiag_approx_zero!(B,n₂,ɛ)
                 n₂ -= 1
                 if n₂ == 1
                     @goto done
                 end
             end
 
-
-
-            n₁ = n₂ - 1
-            # check for diagonal zeros
-            if abs(B.dv[n₁]) ≤ ɛ*maxB
-                svd_zerodiag_row!(U,B,n₁,n₂)
-                @goto mainloop
-            end
-            while n₁ > 1 && !offdiag_approx_zero(B,n₁,ɛ)
+            n₁ = n₂
+            while true
                 n₁ -= 1
+
                 # check for diagonal zeros
                 if abs(B.dv[n₁]) ≤ ɛ*maxB
                     svd_zerodiag_row!(U,B,n₁,n₂)
                     @goto mainloop
+                end
+                if n₁ == 1 || is_offdiag_approx_zero!(B,n₁,ɛ)
+                    break
                 end
             end
 
@@ -140,7 +152,9 @@ end
 
 
 """
-Sets B[n₁,n₁] to zero, then zeros out row n₁ by applying sequential row (left) Givens rotations up to n₂.
+    svd_zerodiag_row!(U,B,n₁,n₂)
+
+Sets `B[n₁,n₁]` to zero, then zeros out row `n₁` by applying sequential row (left) Givens rotations up to `n₂`, and the corresponding inverse rotations to `U` (preserveing `U*B`.
 """
 function svd_zerodiag_row!(U,B,n₁,n₂)
     e = B.ev[n₁]
@@ -167,7 +181,9 @@ end
 
 
 """
-Sets B[n₂,n₂] to zero, then zeros out column n₂ by applying sequential column (right) Givens rotations up to n₁.
+    svd_zerodiag_col!(B::Bidiagonal,Vt,n₁,n₂)
+
+Sets `B[n₂,n₂]` to zero, then zeros out column `n₂` by applying sequential column (right) Givens rotations up to `n₁`, and the corresponding inverse rotations to `Vt` (preserving `B*Vt`).
 """
 function svd_zerodiag_col!(B,Vt,n₁,n₂)
     e = B.ev[n₂-1]
@@ -187,7 +203,7 @@ function svd_zerodiag_col!(B,Vt,n₁,n₂)
 
         if n₁ < i
             eᵢ = B.ev[i-1]
-            e       = -G.s*eᵢ
+            e         = -G.s*eᵢ
             B.ev[i-1] = G.c*eᵢ
         end
     end
@@ -196,7 +212,9 @@ end
 
 
 """
-Applies a Golub-Kahan SVD step.
+    svd_gk!{T<:Real}(B::Bidiagonal{T},U,Vt,n₁,n₂,shift)
+
+Applies a Golub-Kahan SVD step (an implicit QR with shift) to the submatrix `B[n₁:n₂,n₁:n₂]`, applying the inverse transformations to `U` and `Vt` (preserving `U*B*Vt`).
 
 A Givens rotation is applied to the top 2x2 matrix, and the resulting "bulge" is "chased" down the diagonal to the bottom of the matrix.
 """
@@ -275,6 +293,8 @@ end
 
 
 """
+    svdvals2x2(f, h, g)
+
 The singular values of the matrix
 ```
 B = [ f g ;
@@ -289,8 +309,7 @@ function svdvals2x2(f, h, g)
     ga = abs(g)
     ha = abs(h)
 
-    fhmin = min(fa,ha)
-    fhmax = max(fa,ha)
+    fhmin, fhmax = minmax(fa,ha)
 
     if fhmin == 0
         ssmin = zero(f)

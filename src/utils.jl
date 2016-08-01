@@ -26,9 +26,11 @@ import Base: A_mul_B!, A_mul_Bc!, A_ldiv_B!
 A_mul_B!(G::LinAlg.Givens, ::Void) = nothing
 A_mul_Bc!(::Void, G::LinAlg.Givens) = nothing
 
-function A_ldiv_B!{Ta,Tb}(A::SVD{Ta}, B::StridedVecOrMat{Tb})
-    k = searchsortedlast(A.S, eps(real(Ta))*A.S[1], rev=true)
-    sub(A.Vt,1:k,:)' * (sub(A.S,1:k) .\ (sub(A.U,:,1:k)' * B))
+if VERSION < v"0.5.0-"
+    function A_ldiv_B!{Ta,Tb}(A::SVD{Ta}, B::StridedVecOrMat{Tb})
+        k = searchsortedlast(A.S, eps(real(Ta))*A.S[1], rev=true)
+        view(A.Vt,1:k,:)' * (view(A.S,1:k) .\ (view(A.U,:,1:k)' * B))
+    end
 end
 
 
