@@ -96,7 +96,7 @@ This proceeds by iteratively finding the lowest strictly-bidiagonal submatrix, i
 ```
 then applying a Golub-Kahan QR iteration.
 """
-function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ::T = eps(T))
+function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T))
     n = size(B, 1)
     n₂ = n
 
