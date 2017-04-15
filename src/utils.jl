@@ -25,24 +25,3 @@ import Base: A_mul_B!, A_mul_Bc!, A_ldiv_B!
 
 A_mul_B!(G::LinAlg.Givens, ::Void) = nothing
 A_mul_Bc!(::Void, G::LinAlg.Givens) = nothing
-
-if VERSION < v"0.5.0-"
-    function A_ldiv_B!{Ta,Tb}(A::SVD{Ta}, B::StridedVecOrMat{Tb})
-        k = searchsortedlast(A.S, eps(real(Ta))*A.S[1], rev=true)
-        view(A.Vt,1:k,:)' * (view(A.S,1:k) .\ (view(A.U,:,1:k)' * B))
-    end
-end
-
-
-# we have to define our own givens function due to ordering restriction in Base (#14936)
-function givens{T}(f::T, g::T, i1::Integer, i2::Integer)
-    if i1 == i2
-        throw(ArgumentError("Indices must be distinct."))
-    end
-    c, s, r = Base.LinAlg.givensAlgorithm(f, g)
-    if i1 > i2
-        s = -conj(s)
-        i1,i2 = i2,i1
-    end
-    Base.LinAlg.Givens(i1, i2, convert(T, c), convert(T, s)), r
-end
