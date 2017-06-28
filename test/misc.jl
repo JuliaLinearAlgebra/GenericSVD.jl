@@ -9,7 +9,7 @@ c = randn()
 U = [a c; 0 b]
 x,y = GenericSVD.svdvals2x2(a,b,c)
 
-@test sort(sqrt(eigvals(U'*U))) ≈ [x,y]
+@test sort(sqrt.(eigvals(U'*U))) ≈ [x,y]
 @test sort(svdvals(U)) ≈ [x,y]
 
 U = eye(3)
