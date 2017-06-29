@@ -100,7 +100,7 @@ function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T))
     n = size(B, 1)
     n₂ = n
 
-    maxB = max(maxabs(B.dv),maxabs(B.ev))
+    maxB = max(maximum(abs, B.dv), maximum(abs, B.ev))
 
     if istriu(B)
         while true
