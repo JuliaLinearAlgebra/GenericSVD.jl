@@ -1,7 +1,6 @@
 __precompile__(true)
 module GenericSVD
 
-import Compat: view
 import Base: SVD
 
 include("utils.jl")
