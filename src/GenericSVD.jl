@@ -97,6 +97,9 @@ then applying a Golub-Kahan QR iteration.
 """
 function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T))
     n = size(B, 1)
+    if n == 1
+        @goto done
+    end
     n₂ = n
 
     maxB = max(maximum(abs, B.dv), maximum(abs, B.ev))
