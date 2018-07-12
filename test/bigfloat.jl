@@ -1,5 +1,5 @@
 using GenericSVD
-using Base.Test
+using Test, Random, LinearAlgebra
 
 srand(1)
 
@@ -7,41 +7,42 @@ n,m = 100,20
 
 X = randn(n,m)
 bX = big.(X)
-bS = svdfact(bX)
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+bS = svd(bX)
 @test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test bX == X # check we didn't modify the input
 
 bY = big.(randn(n))
-@test isapprox(qrfact(bX,Val{false}) \ bY, bS \ bY, rtol=1e3*eps(BigFloat))
+@test isapprox(qr(bX) \ bY, bS \ bY, rtol=1e3*eps(BigFloat))
 @test bX == X # check we didn't modify the input
 
-bXt = bX'
-bSt = svdfact(bXt)
-@test isapprox(full(bSt), bXt, rtol=1e3*eps(BigFloat))
+# Note: currently ∄ method for svd(Adjoint{BF,Matrix{BF}})
+bXt = Matrix(bX')
+bSt = svd(bXt)
+@test isapprox(Matrix(bSt), bXt, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bXt), svdvals(X), rtol=1e3*eps())
 @test bXt == X' # check we didn't modify the input
 
 X = Float64[1 2 0; 0 1 2; 0 0 0]
 bX = big.(X)
-bS = svdfact(bX)
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+bS = svd(bX)
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
 @test bX == X # check we didn't modify the input
 
 X = Float64[0 2 0; 0 1 2; 0 0 1]
 bX = big.(X)
-bS = svdfact(bX)
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+bS = svd(bX)
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
 @test bX == X # check we didn't modify the input
 
 
 bD = big.(randn(m))
-bX = diagm(bD)
-bS = svdfact(bX)
+bX = diagm(0 => bD)
+bS = svd(bX)
 
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test bS.S == sort(abs.(bD),rev=true)
 
 
@@ -49,43 +50,42 @@ bS = svdfact(bX)
 
 X = randn(n,m)+im*randn(n,m)
 bX = big.(X)
-bS = svdfact(bX)
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+bS = svd(bX)
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
 @test bX == X # check we didn't modify the input
 
-bXt = bX'
-bSt = svdfact(bXt)
-@test isapprox(full(bSt), bXt, rtol=1e3*eps(BigFloat))
+bXt = Matrix(bX')
+bSt = svd(bXt)
+@test isapprox(Matrix(bSt), bXt, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bXt), svdvals(X), rtol=1e3*eps())
 @test bXt == X' # check we didn't modify the input
 
 
-X = Complex128[1 2 0; 0 1 2; 0 0 0]
+X = ComplexF64[1 2 0; 0 1 2; 0 0 0]
 bX = big.(X)
-bS = svdfact(bX)
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+bS = svd(bX)
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
 @test bX == X # check we didn't modify the input
 
-X = Complex128[0 2 0; 0 1 2; 0 0 1]
+X = ComplexF64[0 2 0; 0 1 2; 0 0 1]
 bX = big.(X)
-bS = svdfact(bX)
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+bS = svd(bX)
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
 @test bX == X # check we didn't modify the input
 
-n = 100
 X = randn(n,1)
 bX = big.(X)
-bS = svdfact(bX)
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+bS = svd(bX)
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
 @test bX == X # check we didn't modify the input
 
 X = randn(1,n)
 bX = big.(X)
-bS = svdfact(bX)
-@test isapprox(full(bS), bX, rtol=1e3*eps(BigFloat))
+bS = svd(bX)
+@test isapprox(Matrix(bS), bX, rtol=1e3*eps(BigFloat))
 @test isapprox(svdvals(bX), svdvals(X), rtol=1e3*eps())
 @test bX == X # check we didn't modify the input
