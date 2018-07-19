@@ -1,4 +1,6 @@
-import Base.LinAlg: reflectorApply!
+# Avast, LinearAlgebra, prepare to be boarded!
+import LinearAlgebra: reflectorApply!
+
 @inline function reflectorApply!(A::StridedMatrix, x::AbstractVector, τ::Number) # apply conjugate transpose reflector from right.
     m, n = size(A)
     if length(x) != n
@@ -21,7 +23,7 @@ import Base.LinAlg: reflectorApply!
 end
 
 
-import Base: A_mul_B!, A_mul_Bc!, A_ldiv_B!
+import LinearAlgebra: lmul!, rmul!
 
-A_mul_B!(G::LinAlg.Givens, ::Void) = nothing
-A_mul_Bc!(::Void, G::LinAlg.Givens) = nothing
+lmul!(G::LinearAlgebra.Givens{T}, ::Nothing) where T = nothing
+rmul!(::Nothing, Ga::Adjoint{Any,LinearAlgebra.Givens{T}}) where T = nothing

@@ -1,25 +1,35 @@
 __precompile__(true)
 module GenericSVD
-
-import Base: SVD
+using LinearAlgebra
+import LinearAlgebra: SVD, svd!
 
 include("utils.jl")
 include("bidiagonalize.jl")
 
-Base.svdfact!(X::AbstractMatrix; thin=true) = generic_svdfact!(X; thin=thin)
-Base.svdvals!(X::AbstractMatrix) = generic_svdvals!(X)
+function svd!(X::AbstractMatrix; full::Bool=false, thin::Union{Bool,Nothing} = nothing)
+    if thin != nothing
+        @warn "obsolete keyword thin in generic svd!"
+        thinx = thin
+    else
+        thinx = !full
+    end
+    generic_svdfact!(X; thin=thinx)
+end
+
+LinearAlgebra.svdvals!(X::AbstractMatrix) = generic_svdvals!(X)
 
 function generic_svdfact!(X::AbstractMatrix; sorted=true, thin=true)
     m,n = size(X)
-    t =false
-    if m < n
+    wide = m < n
+    if wide
         m,n = n,m
         X = X'
-        t = true
     end
     B,P = bidiagonalize_tall!(X)
-    U,Vt = full(P,thin=thin)
+    U,Vt = unpack(P,thin=thin)
     U,S,Vt = svd!(B,U,Vt)
+    # as of Julia v0.7 we need to revert a mysterious transpose here
+    Vt=Vt'
     for i = 1:n
         if signbit(S[i])
             S[i] = -S[i]
@@ -29,12 +39,12 @@ function generic_svdfact!(X::AbstractMatrix; sorted=true, thin=true)
         end
     end
     if sorted
-        I = sortperm(S,rev=true)
-        S = S[I]
-        U = U[:,I]
-        Vt = Vt[I,:]
+        Idx = sortperm(S,rev=true)
+        S = S[Idx]
+        U = U[:,Idx]
+        Vt = Vt[Idx,:]
     end
-    t ? SVD(Vt',S,U') : SVD(U,S,Vt)
+    wide ? SVD(Vt',S,U') : SVD(U,S,Vt)
 end
 
 function generic_svdvals!(X::AbstractMatrix; sorted=true)
@@ -43,7 +53,7 @@ function generic_svdvals!(X::AbstractMatrix; sorted=true)
         X = X'
     end
     B,P = bidiagonalize_tall!(X)
-    S = svd!(B)[2]
+    S = svd!(B)
     for i = eachindex(S)
         if signbit(S[i])
             S[i] = -S[i]
@@ -95,7 +105,7 @@ This proceeds by iteratively finding the lowest strictly-bidiagonal submatrix, i
 ```
 then applying a Golub-Kahan QR iteration.
 """
-function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T))
+function svd!(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T)) where T <: Real
     n = size(B, 1)
     if n == 1
         @goto done
@@ -143,13 +153,22 @@ function svd!{T<:Real}(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T))
             # use singular value closest to sqrt of final element of B'*B
             h = hypot(d₂,e)
             shift = abs(s₁-h) < abs(s₂-h) ? s₁ : s₂
+            # avoid infinite loop
+            if !all(isfinite.(B))
+                (U == nothing) && return B.dv+NaN
+                return SVD(U .+ NaN, B.dv .+ NaN, Vt .+ NaN)
+            end
             svd_gk!(B, U, Vt, n₁, n₂, shift)
         end
     else
         throw(ArgumentError("lower bidiagonal version not implemented yet"))
     end
     @label done
-    U, B.dv, Vt
+    if U == nothing
+        return B.dv
+    else
+        return SVD(U, B.dv, Vt)
+    end
 end
 
 
@@ -170,7 +189,7 @@ function svd_zerodiag_row!(U,B,n₁,n₂)
         dᵢ = B.dv[i]
 
         G,r = givens(dᵢ,e,i,n₁)
-        A_mul_Bc!(U,G)
+        rmul!(U,adjoint(G))
         B.dv[i] = r # -G.s*e + G.c*dᵢ
 
         if i < n₂
@@ -199,7 +218,7 @@ function svd_zerodiag_col!(B,Vt,n₁,n₂)
         dᵢ = B.dv[i]
 
         G,r = givens(dᵢ,e,i,n₂)
-        A_mul_B!(G,Vt)
+        lmul!(G,Vt)
 
         B.dv[i] = r # G.c*dᵢ + G.s*e
 
@@ -214,13 +233,13 @@ end
 
 
 """
-    svd_gk!{T<:Real}(B::Bidiagonal{T},U,Vt,n₁,n₂,shift)
+    svd_gk!(B::Bidiagonal{T},U,Vt,n₁,n₂,shift) where T <: Real
 
 Applies a Golub-Kahan SVD step (an implicit QR with shift) to the submatrix `B[n₁:n₂,n₁:n₂]`, applying the inverse transformations to `U` and `Vt` (preserving `U*B*Vt`).
 
 A Givens rotation is applied to the top 2x2 matrix, and the resulting "bulge" is "chased" down the diagonal to the bottom of the matrix.
 """
-function svd_gk!{T<:Real}(B::Bidiagonal{T},U,Vt,n₁,n₂,shift)
+function svd_gk!(B::Bidiagonal{T},U,Vt,n₁,n₂,shift) where T <: Real
 
     if istriu(B)
 
@@ -229,7 +248,7 @@ function svd_gk!{T<:Real}(B::Bidiagonal{T},U,Vt,n₁,n₂,shift)
         d₂′ = B.dv[n₁+1]
 
         G, r = givens(d₁′ - abs2(shift)/d₁′, e₁′, n₁, n₁+1)
-        A_mul_B!(G, Vt)
+        lmul!(G,Vt)
 
         #  [d₁,e₁] = [d₁′,e₁′] * G'
         #  [b ,d₂]   [0  ,d₂′]
@@ -248,7 +267,7 @@ function svd_gk!{T<:Real}(B::Bidiagonal{T},U,Vt,n₁,n₂,shift)
             e₂ = B.ev[i+1]
 
             G, r = givens(d₁, b, i, i+1)
-            A_mul_Bc!(U, G)
+            rmul!(U,adjoint(G))
 
             B.dv[i] =  r # G.c*d₁ + G.s*b
 
@@ -265,7 +284,7 @@ function svd_gk!{T<:Real}(B::Bidiagonal{T},U,Vt,n₁,n₂,shift)
             d₃′ = B.dv[i+2]
 
             G, r = givens(e₁′, b′, i+1, i+2)
-            A_mul_B!(G, Vt)
+            lmul!(G, Vt)
 
             B.ev[i] = r # e₁′*G.c + b′*G.s
 
@@ -280,7 +299,7 @@ function svd_gk!{T<:Real}(B::Bidiagonal{T},U,Vt,n₁,n₂,shift)
         #  [0 ,.]       [b ,d₂]
 
         G, r = givens(d₁,b,n₂-1,n₂)
-        A_mul_Bc!(U, G)
+        rmul!(U, adjoint(G))
 
         B.dv[n₂-1] =  r # G.c*d₁ + G.s*b
 
