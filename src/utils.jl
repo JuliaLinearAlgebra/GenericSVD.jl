@@ -26,4 +26,9 @@ end
 import LinearAlgebra: lmul!, rmul!
 
 lmul!(G::LinearAlgebra.Givens{T}, ::Nothing) where T = nothing
-rmul!(::Nothing, Ga::Adjoint{Any,LinearAlgebra.Givens{T}}) where T = nothing
+
+# This worked for early betas of 0.7:
+# rmul!(::Nothing, Ga::Adjoint{Any,LinearAlgebra.Givens{T}}) where T = nothing
+
+# Now that adjoint of Givens is material:
+rmul!(::Nothing, G::LinearAlgebra.Givens{T}) where T = nothing

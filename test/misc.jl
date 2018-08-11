@@ -1,7 +1,7 @@
 using GenericSVD
 using Test, Random, LinearAlgebra
 
-srand(1)
+Random.seed!(1)
 
 a = randexp()
 b = randexp()

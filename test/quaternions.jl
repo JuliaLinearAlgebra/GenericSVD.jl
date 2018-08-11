@@ -2,7 +2,7 @@ using GenericSVD
 using Quaternions
 using Test, Random, LinearAlgebra
 
-srand(1)
+Random.seed!(1)
 
 n,m = 100,20
 
