@@ -28,7 +28,7 @@ function generic_svdfact!(X::AbstractMatrix; sorted=true, thin=true)
     end
     B,P = bidiagonalize_tall!(X)
     U,Vt = unpack(P,thin=thin)
-    U,S,Vt = svd!(B,U,Vt)
+    U,S,Vt = svd_bidiag!(B,U,Vt)
     # as of Julia v0.7 we need to revert a mysterious transpose here
     Vt=Vt'
     for i = 1:n
@@ -54,12 +54,8 @@ function generic_svdvals!(X::AbstractMatrix; sorted=true)
         X = X'
     end
     B,P = bidiagonalize_tall!(X)
-    S = svd!(B)
-    for i = eachindex(S)
-        if signbit(S[i])
-            S[i] = -S[i]
-        end
-    end
+    S = svd_bidiag!(B)
+    S .= abs.(S)
     sorted ? sort!(S,rev=true) : S
 end
 
@@ -83,7 +79,7 @@ end
 
 
 """
-    svd!(B::Bidiagonal [, U, Vt [, ϵ]])
+    svd_bidiag!(B::Bidiagonal [, U, Vt [, ϵ]])
 
 Compute the SVD of a bidiagonal matrix `B`, via an implicit QR algorithm with shift (known as a Golub-Kahan iterations).
 
@@ -106,7 +102,7 @@ This proceeds by iteratively finding the lowest strictly-bidiagonal submatrix, i
 ```
 then applying a Golub-Kahan QR iteration.
 """
-function svd!(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T)) where T <: Real
+function svd_bidiag!(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T)) where T <: Real
     n = size(B, 1)
     if n == 1
         @goto done
@@ -156,8 +152,11 @@ function svd!(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T)) where T <: Rea
             shift = abs(s₁-h) < abs(s₂-h) ? s₁ : s₂
             # avoid infinite loop
             if !all(isfinite.(B))
-                (U == nothing) && return B.dv+NaN
-                return SVD(U .+ NaN, B.dv .+ NaN, Vt .+ NaN)
+                if U === nothing
+                    return B.dv+NaN
+                else
+                    return SVD(U .+ NaN, B.dv .+ NaN, Vt .+ NaN)
+                end
             end
             svd_gk!(B, U, Vt, n₁, n₂, shift)
         end
@@ -165,7 +164,7 @@ function svd!(B::Bidiagonal{T}, U=nothing, Vt=nothing, ɛ=eps(T)) where T <: Rea
         throw(ArgumentError("lower bidiagonal version not implemented yet"))
     end
     @label done
-    if U == nothing
+    if U === nothing
         return B.dv
     else
         return SVD(U, B.dv, Vt)

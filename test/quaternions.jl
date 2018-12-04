@@ -14,3 +14,5 @@ S = svd(X)
 Xt = Matrix(X')
 St = svd(Xt)
 @test isapprox(Matrix(St), Xt, rtol=1e3*eps())
+
+@test svdvals([quat(1) quat(0); quat(0) quat(1)]) == [1.0, 1.0]
