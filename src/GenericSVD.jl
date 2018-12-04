@@ -54,11 +54,9 @@ function generic_svdvals!(X::AbstractMatrix; sorted=true)
         X = X'
     end
     B,P = bidiagonalize_tall!(X)
-    S = svd!(B)
+    S = svd!(B).S
     for i = eachindex(S)
-        if signbit(S[i])
-            S[i] = -S[i]
-        end
+        S[i] = abs(S[i])
     end
     sorted ? sort!(S,rev=true) : S
 end
