@@ -9,10 +9,10 @@ include("bidiagonalize.jl")
 
 function svd!(X::AbstractMatrix; full::Bool=false, thin::Union{Bool,Nothing} = nothing, alg=nothing)
     if alg != nothing
-        @warn "keyword alg ignored in generic svd"
+        @warn "keyword `alg` ignored in generic svd!"
     end
     if thin != nothing
-        @warn "obsolete keyword thin in generic svd!"
+        @warn "obsolete keyword `thin` in generic svd!"
         thinx = thin
     else
         thinx = !full
