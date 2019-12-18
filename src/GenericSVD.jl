@@ -13,16 +13,14 @@ function svd!(X::AbstractMatrix; full::Bool=false, thin::Union{Bool,Nothing} = n
     end
     if thin != nothing
         @warn "obsolete keyword `thin` in generic svd!"
-        thinx = thin
-    else
-        thinx = !full
+        full = !thin
     end
-    generic_svdfact!(X; thin=thinx)
+    generic_svdfact!(X; full=full)
 end
 
 LinearAlgebra.svdvals!(X::AbstractMatrix) = generic_svdvals!(X)
 
-function generic_svdfact!(X::AbstractMatrix; sorted=true, thin=true)
+function generic_svdfact!(X::AbstractMatrix; sorted=true, full=false)
     m,n = size(X)
     wide = m < n
     if wide
@@ -30,7 +28,7 @@ function generic_svdfact!(X::AbstractMatrix; sorted=true, thin=true)
         X = X'
     end
     B,P = bidiagonalize_tall!(X)
-    U,Vt = unpack(P,thin=thin)
+    U,Vt = unpack(P,full=full)
     U,S,Vt = svd_bidiag!(B,U,Vt)
     # as of Julia v0.7 we need to revert a mysterious transpose here
     Vt=Vt'
@@ -45,8 +43,8 @@ function generic_svdfact!(X::AbstractMatrix; sorted=true, thin=true)
     if sorted
         Idx = sortperm(S,rev=true)
         S = S[Idx]
-        U = U[:,Idx]
-        Vt = Vt[Idx,:]
+        U[:, 1:n] .= U[:,Idx]
+        Vt[1:n, :] .= Vt[Idx,:]
     end
     wide ? SVD(Vt',S,U') : SVD(U,S,Vt)
 end
