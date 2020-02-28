@@ -29,3 +29,33 @@ GenericSVD.svd_zerodiag_col!(B,Vt,1,3)
 @test B[3,3] == 0
 @test B[2,3] == 0
 @test Matrix(B)*Vt ≈ B1
+
+
+
+# Test of the full keyword
+A_43 = big.(reshape(1:12, 4, 3))
+
+U, S, V = svd(A_43, full=true)
+@test U'*U ≈ Matrix(I, 4, 4)
+@test V'*V ≈ Matrix(I, 3, 3)
+@test U*[diagm(0 => S); zeros(1,3)]*V' ≈ A_43
+@test issorted(S, rev=true)
+
+U, S, V = svd(A_43, full=false)
+@test U'*U ≈ Matrix(I, 3, 3)
+@test V'*V ≈ Matrix(I, 3, 3)
+@test U*diagm(0 => S)*V' ≈ A_43
+@test issorted(S, rev=true)
+
+A_34 = big.(reshape(1:12, 3, 4))
+U, S, V = svd(A_34, full=true)
+@test U'*U ≈ Matrix(I, 3, 3)
+@test V'*V ≈ Matrix(I, 4, 4)
+@test U*[diagm(0 => S) zeros(3,1)]*V' ≈ A_34
+@test issorted(S, rev=true)
+
+U, S, V = svd(A_34, full=false)
+@test U'*U ≈ Matrix(I, 3, 3)
+@test V'*V ≈ Matrix(I, 3, 3)
+@test U*diagm(0 => S)*V' ≈ A_34
+@test issorted(S, rev=true)

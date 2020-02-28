@@ -54,12 +54,12 @@ function bidiagonalize_tall!(A::Matrix{T}) where T
     bidiagonalize_tall!(A, B)
 end
 
-function unpack(P::PackedUVt{T};thin=true) where T
+function unpack(P::PackedUVt{T};full=false) where T
     A = P.A
     m,n = size(A)
 
     # U = Q_1 ... Q_n I_{m,n}
-    w = thin ? n : m
+    w = full ? m : n
     U = Matrix(one(T)*I,m,w) # eye(T,m,w)
     for i = n:-1:1
         τi = A[i,i]
