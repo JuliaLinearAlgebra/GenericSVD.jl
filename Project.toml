@@ -1,6 +1,6 @@
 name = "GenericSVD"
 uuid = "01680d73-4ee2-5a08-a1aa-533608c188bb"
-version = "0.3"
+version = "0.3.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
