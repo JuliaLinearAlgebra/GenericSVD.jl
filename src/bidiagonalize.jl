@@ -11,11 +11,11 @@ end
 
 
 """
-    bidiagonalize_tall!{T}(A::Matrix{T},B::Bidiagonal)
+    bidiagonalize_tall!{T}(A::AbstractMatrix{T},B::Bidiagonal)
 
 Bidiagonalize a tall matrix `A` into `B`. Both arguments are overwritten.
 """
-function bidiagonalize_tall!(A::Matrix{T},B::Bidiagonal) where T
+function bidiagonalize_tall!(A::AbstractMatrix{T},B::Bidiagonal) where T
     m, n = size(A)
     # tall case: assumes m >= n
     # upper bidiagonal
@@ -47,7 +47,7 @@ function bidiagonalize_tall!(A::Adjoint{T2,Matrix{T}}) where {T,T2}
     bidiagonalize_tall!(Matrix(A))
 end
 
-function bidiagonalize_tall!(A::Matrix{T}) where T
+function bidiagonalize_tall!(A::AbstractMatrix{T}) where T
     m,n = size(A)
     R = real(T)
     B = Bidiagonal(Vector{R}(undef, n), Vector{R}(undef, n - 1), :U)
