@@ -35,7 +35,7 @@ function bidiagonalize_tall!(A::AbstractMatrix{T},B::Bidiagonal) where T
             conj!(x)
             τi = LinearAlgebra.reflector!(x)
             B.ev[i] = real(A[i,i+1])
-            LinearAlgebra.reflectorApply!(@view(A[i+1:m, i+1:n]), x, τi)
+            rreflectorApply!(@view(A[i+1:m, i+1:n]), x, τi)
             A[i,i+1] = τi
         end
     end
@@ -72,7 +72,7 @@ function unpack(P::PackedUVt{T};full=false) where T
     for i = n-1:-1:1
         τi = A[i,i+1]
         x = @view A[i, i+1:n]
-        reflectorApply!(@view(Vt[i:n, i+1:n]), x, τi')
+        rreflectorApply!(@view(Vt[i:n, i+1:n]), x, τi')
     end
     U,Vt
 end

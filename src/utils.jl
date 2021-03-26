@@ -1,7 +1,5 @@
-# Avast, LinearAlgebra, prepare to be boarded!
-import LinearAlgebra: reflectorApply!
 
-@inline function reflectorApply!(A::StridedMatrix, x::AbstractVector, τ::Number) # apply conjugate transpose reflector from right.
+@inline function rreflectorApply!(A::StridedMatrix, x::AbstractVector, τ::Number) # apply conjugate transpose reflector from right.
     m, n = size(A)
     if length(x) != n
         throw(DimensionMismatch("reflector must have same length as second dimension of matrix"))
@@ -21,14 +19,3 @@ import LinearAlgebra: reflectorApply!
     end
     return A
 end
-
-
-import LinearAlgebra: lmul!, rmul!
-
-lmul!(G::LinearAlgebra.Givens{T}, ::Nothing) where T = nothing
-
-# This worked for early betas of 0.7:
-# rmul!(::Nothing, Ga::Adjoint{Any,LinearAlgebra.Givens{T}}) where T = nothing
-
-# Now that adjoint of Givens is material:
-rmul!(::Nothing, G::LinearAlgebra.Givens{T}) where T = nothing

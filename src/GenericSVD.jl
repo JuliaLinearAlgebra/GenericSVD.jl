@@ -190,7 +190,7 @@ function svd_zerodiag_row!(U,B,n₁,n₂)
         dᵢ = B.dv[i]
 
         G,r = givens(dᵢ,e,i,n₁)
-        rmul!(U,adjoint(G))
+        (U === nothing) || rmul!(U,adjoint(G))
         B.dv[i] = r # -G.s*e + G.c*dᵢ
 
         if i < n₂
@@ -219,7 +219,7 @@ function svd_zerodiag_col!(B,Vt,n₁,n₂)
         dᵢ = B.dv[i]
 
         G,r = givens(dᵢ,e,i,n₂)
-        lmul!(G,Vt)
+        (Vt === nothing) || lmul!(G,Vt)
 
         B.dv[i] = r # G.c*dᵢ + G.s*e
 
@@ -249,7 +249,7 @@ function svd_gk!(B::Bidiagonal{T},U,Vt,n₁,n₂,shift) where T <: Real
         d₂′ = B.dv[n₁+1]
 
         G, r = givens(d₁′ - abs2(shift)/d₁′, e₁′, n₁, n₁+1)
-        lmul!(G,Vt)
+        (Vt === nothing) || lmul!(G,Vt)
 
         #  [d₁,e₁] = [d₁′,e₁′] * G'
         #  [b ,d₂]   [0  ,d₂′]
@@ -268,7 +268,7 @@ function svd_gk!(B::Bidiagonal{T},U,Vt,n₁,n₂,shift) where T <: Real
             e₂ = B.ev[i+1]
 
             G, r = givens(d₁, b, i, i+1)
-            rmul!(U,adjoint(G))
+            (U === nothing) || rmul!(U,adjoint(G))
 
             B.dv[i] =  r # G.c*d₁ + G.s*b
 
@@ -285,7 +285,7 @@ function svd_gk!(B::Bidiagonal{T},U,Vt,n₁,n₂,shift) where T <: Real
             d₃′ = B.dv[i+2]
 
             G, r = givens(e₁′, b′, i+1, i+2)
-            lmul!(G, Vt)
+            (Vt === nothing) || lmul!(G, Vt)
 
             B.ev[i] = r # e₁′*G.c + b′*G.s
 
@@ -300,7 +300,7 @@ function svd_gk!(B::Bidiagonal{T},U,Vt,n₁,n₂,shift) where T <: Real
         #  [0 ,.]       [b ,d₂]
 
         G, r = givens(d₁,b,n₂-1,n₂)
-        rmul!(U, adjoint(G))
+        (U === nothing) || rmul!(U, adjoint(G))
 
         B.dv[n₂-1] =  r # G.c*d₁ + G.s*b
 
