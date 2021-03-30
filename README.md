@@ -1,5 +1,11 @@
 # GenericSVD.jl
 
+## Notice
+
+This package is no longer maintained. Functionality from this package is available in [GenericLinearAlgebra.jl](https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl).
+
+---
+
 [![Build Status](https://github.com/JuliaLinearAlgebra/GenericSVD.jl/workflows/CI/badge.svg)](https://github.com/JuliaLinearAlgebra/GenericSVD.jl/actions)
 [![Coverage](https://codecov.io/gh/JuliaLinearAlgebra/GenericSVD.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaLinearAlgebra/GenericSVD.jl)
 
